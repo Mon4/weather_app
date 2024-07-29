@@ -8,7 +8,40 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 
-<body>
-<h1>Hello World!</h1>
-</body>
+    <body>
+        <div class="container-main">
+            <div class="container">
+                <div class="buttons_div">
+                    <div class="hbutton thick"><a class="link">Temperatura</a></div>
+                    <div class="hbutton thick"><a class="link">Szansa Opadów</a></div>
+                </div>
+                <div class="big_container">
+                    <div class="plot_container">
+                        <p>wykresik</p>
+                    </div>
+                    <div class="info_container">
+                        <p>basic info</p>
+                    </div>
+                </div>
+
+
+                <div class="forecast_container">
+                    <div class="days">
+                        <div class="day thick">Dzisiaj</div>
+                        <div class="day thick">Jutro</div>
+                        <div class="day thick">Pojutrze</div>
+                    </div>
+
+                    <div class="imgs_container">
+                        <div class="img_container"></div>
+                        <div class="img_container"></div>
+                        <div class="img_container"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </body>
 </html>
