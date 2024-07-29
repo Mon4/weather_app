@@ -14,15 +14,21 @@
         <div class="container-main">
             <div class="container">
                 <div class="buttons_div">
-                    <div class="hbutton thick"><a class="link">Temperatura</a></div>
+                    <div class="hbutton thick" style="margin-right: 4px;"><a class="link">Temperatura</a></div>
                     <div class="hbutton thick"><a class="link">Szansa Opadów</a></div>
                 </div>
                 <div class="big_container">
                     <div class="plot_container">
                         <p>wykresik</p>
                     </div>
-                    <div class="info_container">
-                        <p>basic info</p>
+                    <div class="info_background">
+                        <div class="info_container">
+                            <p class="thick">Pogoda dla: </p>
+                            <p class="thick">Czas: </p>
+                            <p class="thick">Temperatura: </p>
+                            <p class="thick">Szansa opadów: </p>
+                            <p class="thick">Wiatr: </p>
+                        </div>
                     </div>
                 </div>
 
@@ -35,9 +41,24 @@
                     </div>
 
                     <div class="imgs_container">
-                        <div class="img_container"></div>
-                        <div class="img_container"></div>
-                        <div class="img_container"></div>
+                        <div class="img_container">
+                            <div class="img_background">
+                                <img src="/static/imgs/weather_icons/cloudy.png" alt="weather">
+                            </div>
+                            <p>15°C</p>
+                        </div>
+                        <div class="img_container">
+                            <div class="img_background">
+                                <img src="/static/imgs/weather_icons/sun.png" alt="weather">
+                            </div>
+                            <p>30°C</p>
+                        </div>
+                        <div class="img_container">
+                            <div class="img_background">
+                                <img src="/static/imgs/weather_icons/rain (2).png" alt="weather">
+                            </div>
+                            <p>10°C</p>
+                        </div>
                     </div>
 
                 </div>
