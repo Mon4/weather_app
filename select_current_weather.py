@@ -6,16 +6,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 
-# leave only defined amount of rows
-def remove_rows(today: datetime, df: pd.DataFrame, hours: int = 48) -> pd.DataFrame:
-    df['time'] = pd.to_datetime(df['time'])
-    # days before today and till current hour
-    df = df[(df['time'].dt.day != today.day) | (df['time'].dt.day == today.day) & (df['time'].dt.hour <= today.hour)]
-    # defined amount of hours back
-    df = df.iloc[-hours:].reset_index(drop=True)
-    return df
-
-
 def select_columns(data: dict) -> pd.DataFrame:
     keys = ['time', 'temp_c', 'wind_kph', 'wind_dir', 'pressure_mb', 'precip_mm']
     last_df = pd.DataFrame(columns=keys)
@@ -31,19 +21,19 @@ def select_columns(data: dict) -> pd.DataFrame:
 
     return last_df
 
+# leave only defined amount of rows
+def remove_rows(today: datetime, df: pd.DataFrame, hours: int = 48) -> pd.DataFrame:
+    df['time'] = pd.to_datetime(df['time'])
+    # days before today and till current hour
+    df = df[(df['time'].dt.day != today.day) | (df['time'].dt.hour <= today.hour)]
+    # defined amount of hours back
+    df = df.iloc[-hours:].reset_index(drop=True)
+    return df
 
-# count how many days needs to download
-def count_min_days(hours: int, today: datetime) -> int:
-    if (today.hour - 1) >= hours:
-        return 1 + hours // 24
-    elif (today.hour - 1) < hours:
-        return hours // 24
 
-
-def select_current_weather(hours: int) -> None:  # yyyy-MM-dd
+def select_current_weather(hours: int) -> None:
     today = datetime.now()
-    days = count_min_days(hours, today)
-    start_date = today - timedelta(days=days)
+    start_date = today - timedelta(hours=hours)
 
     # configure API key authorization: ApiKeyAuth
     configuration = swagger_client.Configuration()
