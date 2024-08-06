@@ -7,7 +7,8 @@ import pandas as pd
 
 
 def select_columns(data: dict) -> pd.DataFrame:
-    keys = ['time', 'temp_c', 'wind_kph', 'wind_dir', 'pressure_mb', 'precip_mm']
+    keys = ['time', 'temp_c', 'wind_kph', 'wind_degree', 'pressure_mb', 'precip_mm', 'snow_cm', 'humidity', 'cloud',
+            'feelslike_c', 'is_day']
     last_df = pd.DataFrame(columns=keys)
     row = []
 
@@ -20,6 +21,7 @@ def select_columns(data: dict) -> pd.DataFrame:
             row = []
 
     return last_df
+
 
 # leave only defined amount of rows
 def remove_rows(today: datetime, df: pd.DataFrame, hours: int = 48) -> pd.DataFrame:
@@ -52,6 +54,7 @@ def select_current_weather(hours: int) -> None:
 
         df = select_columns(api_response)
         df = remove_rows(today, df)
+
         df.to_csv('data/last_data.csv', index=False)
 
     except ApiException as e:
