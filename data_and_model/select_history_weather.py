@@ -16,6 +16,13 @@ def select_history_weather():
     # prepare data before saving
     df.columns = keys
 
+    df['time'] = pd.to_datetime(df['time'])
+
+    df.rename(columns={'time': 'datetime'}, inplace=True)
+
+    df.ffill(inplace=True)
+    df.bfill(inplace=True)
+
     # save data
     df.to_csv('data/history_data_small.csv', index=False)
 

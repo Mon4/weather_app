@@ -32,6 +32,8 @@ and maybe more...
 
 ## 2. Preprocessing
 
+Replacing nulls with the previous and following value, casting date and time column to datetime.
+
 ## 3. Model
 
 ## 4. Website
