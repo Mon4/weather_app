@@ -11,10 +11,8 @@ def select_history_weather():
     keys = ['time', 'temp_c', 'wind_kph', 'wind_degree', 'pressure_mb', 'precip_mm', 'snow_cm', 'humidity', 'cloud',
             'feelslike_c', 'is_day']
 
-    df = df[history_keys]
-
     # prepare data before saving
-    df.columns = keys
+    df = df[history_keys].set_axis(keys, axis='columns')
 
     df['time'] = pd.to_datetime(df['time'])
 
