@@ -15,13 +15,18 @@ ee76052c13e141698b2112304242207
 
 Interresting variables:
 
-| Names in historic data  | Names in API (last) data                |
-| :---------------------: | :-------------------------------------: |
-| temp_c                  | temperature_2m (°C)                     |
-| wind_kph                | wind_speed_10m (km/h)                   |
-| wind_dir                | wind_direction_10m (°)                  |
-| pressure_mb (hPA)       | surface_pressure (hPa)                  |
-| precip_mm               | precipitation (mm)                      |
+| Names in historic data  |     Names in API (last) data     |
+| :---------------------: |:--------------------------------:|
+| temp_c                  |       temperature_2m (°C)        |
+| wind_kph                |      wind_speed_10m (km/h)       |
+| wind_dir                |      wind_direction_10m (°)      |
+| pressure_mb (hPA)       |      surface_pressure (hPa)      |
+| precip_mm               |        precipitation (mm)        |
+| snow_cm                 |             snowfall             |
+| humidity                |   relative_humidity_2m (%)       |
+| cloud                   |         cloud_cover (%)          |
+| feels_like_c            |    apparent_temperature (°C)     |
+| is_day                  |             is_day()             |
 
 and maybe more...
 
