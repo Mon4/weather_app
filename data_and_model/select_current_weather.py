@@ -55,6 +55,13 @@ def select_current_weather(hours: int) -> None:
         df = select_columns(api_response)
         df = remove_rows(today, df)
 
+        df['time'] = pd.to_datetime(df['time'])
+
+        df.rename(columns={'time': 'datetime'}, inplace=True)
+
+        df.ffill(inplace=True)
+        df.bfill(inplace=True)
+
         df.to_csv('data/last_data.csv', index=False)
 
     except ApiException as e:
