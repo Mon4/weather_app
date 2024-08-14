@@ -31,6 +31,7 @@ df_train.set_index('time', inplace=True)
 data_train = df_train.values
 
 scaler = MinMaxScaler(feature_range=(0, 1))
+
 data = scaler.fit_transform(data_train)
 
 
@@ -44,4 +45,3 @@ val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*le
 
 for s, t in train_gen:
     print(s.shape, t.shape)
-    
