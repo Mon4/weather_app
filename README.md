@@ -28,11 +28,32 @@ Interresting variables:
 | feels_like_c            |    apparent_temperature (°C)     |
 | is_day                  |             is_day()             |
 
-and maybe more...
-
 ## 2. Preprocessing
 
 Replacing nulls with the previous and following value, casting date and time column to datetime.
+
+## 2.5. Tests
+
+### 1. Stationary test - Augmented Dickey-Fuller (ADF)
+
+From this test we got to know that almost all columns are stationary. Only is_day is non-stationary. 
+
+### 2. Autocorrelation test - ACF and PCAF
+
+#### Seasonoality:
+feelslike_c, humidity, is_day, temp_c
+
+![alt text](ACF_temp_c_48.png)
+![alt text](ACF_is_day_48.png)
+
+
+#### Decay in Correlation: 
+
+cloud, precip_mm, pressure_mb, snow_cm, wind_degree, wind_kph
+
+![alt text](ACF_cloud_48.png)
+
+![alt text](ACF_precip_mm_48.png)
 
 ## 3. Model
 
