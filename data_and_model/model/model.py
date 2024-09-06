@@ -13,7 +13,8 @@ def generator(data, lookback, delay, min_index=0, max_index=None, batch_size=128
     i = min_index + lookback
     while 1:
         if i + batch_size >= max_index:
-            break
+            i = min_index + lookback
+            # break
 
         rows = np.arange(i, min(i + batch_size, max_index))
         i += len(rows)
@@ -58,7 +59,19 @@ def scatter_data_sampling(targets_x, targets_y, predictions_x, predictions_y):
     plt.show()
 
 
+def plot_loss(epochs: int, train_loss: list, val_loss: list) -> None:
+    plt.plot(range(1, epochs+1), train_loss, label='train')
+    plt.plot(range(1, epochs+1), val_loss, label='validation')
+    plt.title("Loss function")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss values")
+    plt.show()
+
+
 def train_model(epochs):
+    train_losses = []
+    val_losses = []
+
     for epoch in range(epochs):
         model.train()
         x_batch, y_batch = next(train_gen)  # Get batch from generator
@@ -73,6 +86,7 @@ def train_model(epochs):
         # Forward pass
         outputs = model(x_batch)
         loss = criterion(outputs, y_batch)
+        train_losses.append(loss.item())
 
         # Backward pass and optimisation
         optimizer.zero_grad()
@@ -89,13 +103,15 @@ def train_model(epochs):
 
         with torch.no_grad():  # Disable gradient computation
             outputs = model(x_val)  # Forward pass
-            loss = criterion(outputs, y_val)  # Calculate loss
+            val_loss = criterion(outputs, y_val).item()  # Calculate loss
+            val_losses.append(val_loss)
 
             test_predictions.extend(outputs.detach().numpy())
             test_targets.extend(y_batch.numpy())
-            print(f'Validation loss: {loss.item()}')
+            print(f'Validation loss: {val_loss}')
 
         # scatter_data_sampling(y_batch[:, 0], y_batch[:, 1], outputs[:, 0], outputs[:, 1])
+    return train_losses, val_losses
 
 
 # read data
@@ -121,21 +137,21 @@ n_columns = 10
 input_size = lookback * n_columns  # 120 * 10 = 1200
 hidden_size = 1024
 output_size = 10  # One row with 10 columns
-
-model = MyModel(input_size, hidden_size, output_size)
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
+epochs = 200
 
 train_predictions = []
 train_targets = []
 test_predictions = []
 test_targets = []
 
+# define model
+model = MyModel(input_size, hidden_size, output_size)
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 20
+# train model
+train_losses, val_losses = train_model(epochs)
 
-train_model(epochs)
 
 # rescale
 train_predictions = scaler.inverse_transform(train_predictions)
@@ -150,7 +166,7 @@ temp_test_target = [target[0] for target in test_targets]
 wind_test_pred = [pred[1] for pred in test_predictions]
 wind_test_target = [target[1] for target in test_targets]
 
-# scatter_data_sampling(temp_test_target, wind_test_target, temp_test_pred, wind_test_pred)  # to do, better object oriented this func
+scatter_data_sampling(temp_test_target, wind_test_target, temp_test_pred, wind_test_pred)  # to do, better object oriented this func
 
 # plot train
 temp_train_pred = [pred[0] for pred in train_predictions]
@@ -166,6 +182,6 @@ scatter_data_sampling(temp_train_target, wind_train_target, temp_train_pred, win
 r2 = r2_score(y_true=temp_test_target, y_pred=temp_test_pred)
 print(f'R² Score: {r2}')
 
+plot_loss(epochs, train_losses, val_losses)
 
-# why so tight results ???
-# Why R2 is negative
+# why so bad wind prediction?
