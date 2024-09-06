@@ -1,6 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import torch
+from sklearn.metrics import r2_score
 from sklearn.preprocessing import MinMaxScaler
+from torch import nn, optim, tensor, float32
 
 
 def generator(data, lookback, delay, min_index=0, max_index=None, batch_size=128):
@@ -9,7 +13,7 @@ def generator(data, lookback, delay, min_index=0, max_index=None, batch_size=128
     i = min_index + lookback
     while 1:
         if i + batch_size >= max_index:
-            i = min_index + lookback
+            break
 
         rows = np.arange(i, min(i + batch_size, max_index))
         i += len(rows)
@@ -20,28 +24,148 @@ def generator(data, lookback, delay, min_index=0, max_index=None, batch_size=128
         for j, row in enumerate(rows):
             indices = range(rows[j] - lookback, rows[j])
             samples[j] = data[indices]
-            targets[j] = data[rows[j] + delay, 0]
+            targets[j] = data[indices[-1] + 1 + delay]
 
         yield samples, targets
 
 
+class MyModel(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super(MyModel, self).__init__()
+        self.flatten = nn.Flatten()
+        self.linear_in = nn.Linear(input_size, hidden_size)
+        self.relu1 = nn.ReLU()
+        self.linear_inner = nn.Linear(hidden_size, output_size)
+        self.relu2 = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.flatten(x)
+        x = self.linear_in(x)
+        x = self.relu1(x)
+        x = self.linear_inner(x)
+        x = self.relu2(x)
+        x = self.sigmoid(x)
+        return x
+
+
+def scatter_data_sampling(targets_x, targets_y, predictions_x, predictions_y):
+    plt.scatter(targets_x, targets_y, label='targets')
+    plt.scatter(predictions_x, predictions_y, label='predictions', alpha=0.3)
+    plt.xlabel('temp')
+    plt.ylabel('wind')
+    plt.legend()
+    plt.show()
+
+
+def train_model(epochs):
+    for epoch in range(epochs):
+        model.train()
+        x_batch, y_batch = next(train_gen)  # Get batch from generator
+        x_val, y_val = next(val_gen)
+
+        x_batch = tensor(x_batch, dtype=float32)
+        y_batch = tensor(y_batch, dtype=float32)
+
+        x_val = tensor(x_val, dtype=float32)
+        y_val = tensor(y_val, dtype=float32)
+
+        # Forward pass
+        outputs = model(x_batch)
+        loss = criterion(outputs, y_batch)
+
+        # Backward pass and optimisation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        train_predictions.extend(outputs.detach().numpy())
+        train_targets.extend(y_batch.numpy())
+
+        print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}')
+
+        # evaluation
+        model.eval()  # set model to evaluation mode
+
+        with torch.no_grad():  # Disable gradient computation
+            outputs = model(x_val)  # Forward pass
+            loss = criterion(outputs, y_val)  # Calculate loss
+
+            test_predictions.extend(outputs.detach().numpy())
+            test_targets.extend(y_batch.numpy())
+            print(f'Validation loss: {loss.item()}')
+
+        # scatter_data_sampling(y_batch[:, 0], y_batch[:, 1], outputs[:, 0], outputs[:, 1])
+
+
+# read data
 df_train = pd.read_csv('../data/history_data_small.csv')
 df_train.set_index('time', inplace=True)
 
-data_train = df_train.values
-
+# data preparation
+df_train_val = df_train.values
 scaler = MinMaxScaler(feature_range=(0, 1))
+data = scaler.fit_transform(df_train_val)
 
-data = scaler.fit_transform(data_train)
-
-
+# generator to create batches
 lookback = 120
-delay = 72
+delay = 0
 batch_size = 128
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
                       batch_size=batch_size)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
                     max_index=round(0.85*len(data)), batch_size=batch_size)
 
-for s, t in train_gen:
-    print(s.shape, t.shape)
+# define model
+n_columns = 10
+input_size = lookback * n_columns  # 120 * 10 = 1200
+hidden_size = 1024
+output_size = 10  # One row with 10 columns
+
+model = MyModel(input_size, hidden_size, output_size)
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
+train_predictions = []
+train_targets = []
+test_predictions = []
+test_targets = []
+
+
+epochs = 20
+
+train_model(epochs)
+
+# rescale
+train_predictions = scaler.inverse_transform(train_predictions)
+train_targets = scaler.inverse_transform(train_targets)
+test_predictions = scaler.inverse_transform(test_predictions)
+test_targets = scaler.inverse_transform(test_targets)
+
+# plot test
+temp_test_pred = [pred[0] for pred in test_predictions]
+temp_test_target = [target[0] for target in test_targets]
+
+wind_test_pred = [pred[1] for pred in test_predictions]
+wind_test_target = [target[1] for target in test_targets]
+
+# scatter_data_sampling(temp_test_target, wind_test_target, temp_test_pred, wind_test_pred)  # to do, better object oriented this func
+
+# plot train
+temp_train_pred = [pred[0] for pred in train_predictions]
+temp_train_target = [target[0] for target in test_targets]
+
+wind_train_pred = [pred[1] for pred in train_predictions]
+wind_train_target = [target[1] for target in test_targets]
+
+scatter_data_sampling(temp_train_target, wind_train_target, temp_train_pred, wind_train_pred)  # to do, better object oriented this func
+
+
+# R score
+r2 = r2_score(y_true=temp_test_target, y_pred=temp_test_pred)
+print(f'R² Score: {r2}')
+
+
+# why so tight results ???
+# Why R2 is negative
