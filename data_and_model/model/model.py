@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.metrics import r2_score
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from torch import nn, optim, tensor, float32
 
+np.set_printoptions(precision=8, suppress=True)
+pd.set_option('display.float_format', '{:.10f}'.format)
 
 def generator(data, lookback, delay, min_index=0, max_index=None, batch_size=128):
     if max_index is None:
@@ -36,9 +38,9 @@ class MyModel(nn.Module):
         self.flatten = nn.Flatten()
         self.linear_in = nn.Linear(input_size, hidden_size)
         self.relu1 = nn.ReLU()
-        self.linear_inner = nn.Linear(hidden_size, output_size)
+        self.linear_inner = nn.Linear(hidden_size, hidden_size)
         self.relu2 = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
+        self.linear_output = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         x = self.flatten(x)
@@ -46,7 +48,7 @@ class MyModel(nn.Module):
         x = self.relu1(x)
         x = self.linear_inner(x)
         x = self.relu2(x)
-        x = self.sigmoid(x)
+        x = self.linear_output(x)
         return x
 
 
@@ -65,6 +67,7 @@ def plot_loss(epochs: int, train_loss: list, val_loss: list) -> None:
     plt.title("Loss function")
     plt.xlabel("Epochs")
     plt.ylabel("Loss values")
+    plt.legend()
     plt.show()
 
 
@@ -84,8 +87,8 @@ def train_model(epochs):
         y_val = tensor(y_val, dtype=float32)
 
         # Forward pass
-        outputs = model(x_batch)
-        loss = criterion(outputs, y_batch)
+        train_outputs = model(x_batch)
+        loss = criterion(train_outputs, y_batch)
         train_losses.append(loss.item())
 
         # Backward pass and optimisation
@@ -93,7 +96,7 @@ def train_model(epochs):
         loss.backward()
         optimizer.step()
 
-        train_predictions.extend(outputs.detach().numpy())
+        train_predictions.extend(train_outputs.detach().numpy())
         train_targets.extend(y_batch.numpy())
 
         print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}')
@@ -102,15 +105,14 @@ def train_model(epochs):
         model.eval()  # set model to evaluation mode
 
         with torch.no_grad():  # Disable gradient computation
-            outputs = model(x_val)  # Forward pass
-            val_loss = criterion(outputs, y_val).item()  # Calculate loss
+            test_outputs = model(x_val)  # Forward pass
+            val_loss = criterion(test_outputs, y_val).item()  # Calculate loss
             val_losses.append(val_loss)
 
-            test_predictions.extend(outputs.detach().numpy())
-            test_targets.extend(y_batch.numpy())
+            test_predictions.extend(test_outputs.detach().numpy())
+            test_targets.extend(y_val.numpy())
             print(f'Validation loss: {val_loss}')
 
-        # scatter_data_sampling(y_batch[:, 0], y_batch[:, 1], outputs[:, 0], outputs[:, 1])
     return train_losses, val_losses
 
 
@@ -118,15 +120,16 @@ def train_model(epochs):
 df_train = pd.read_csv('../data/history_data_small.csv')
 df_train.set_index('time', inplace=True)
 
+
 # data preparation
 df_train_val = df_train.values
-scaler = MinMaxScaler(feature_range=(0, 1))
+scaler = StandardScaler()
 data = scaler.fit_transform(df_train_val)
 
 # generator to create batches
 lookback = 120
 delay = 0
-batch_size = 128
+batch_size = 1024
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
                       batch_size=batch_size)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
@@ -137,7 +140,7 @@ n_columns = 10
 input_size = lookback * n_columns  # 120 * 10 = 1200
 hidden_size = 1024
 output_size = 10  # One row with 10 columns
-epochs = 200
+epochs = 100
 
 train_predictions = []
 train_targets = []
@@ -147,7 +150,7 @@ test_targets = []
 # define model
 model = MyModel(input_size, hidden_size, output_size)
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 # train model
 train_losses, val_losses = train_model(epochs)
@@ -160,28 +163,22 @@ test_predictions = scaler.inverse_transform(test_predictions)
 test_targets = scaler.inverse_transform(test_targets)
 
 # plot test
-temp_test_pred = [pred[0] for pred in test_predictions]
-temp_test_target = [target[0] for target in test_targets]
 
-wind_test_pred = [pred[1] for pred in test_predictions]
-wind_test_target = [target[1] for target in test_targets]
-
-scatter_data_sampling(temp_test_target, wind_test_target, temp_test_pred, wind_test_pred)  # to do, better object oriented this func
+scatter_data_sampling(test_targets[:, 0], test_targets[:, 1], test_predictions[:, 0], test_predictions[:, 1])  # to do, better object oriented this func
 
 # plot train
-temp_train_pred = [pred[0] for pred in train_predictions]
-temp_train_target = [target[0] for target in test_targets]
-
-wind_train_pred = [pred[1] for pred in train_predictions]
-wind_train_target = [target[1] for target in test_targets]
-
-scatter_data_sampling(temp_train_target, wind_train_target, temp_train_pred, wind_train_pred)  # to do, better object oriented this func
+scatter_data_sampling(train_targets[:, 0], train_targets[:, 1], train_predictions[:, 0], train_predictions[:, 1])  # to do, better object oriented this func
 
 
 # R score
-r2 = r2_score(y_true=temp_test_target, y_pred=temp_test_pred)
+r2 = r2_score(y_true=test_targets[:, 0], y_pred=test_predictions[:, 0])
 print(f'R² Score: {r2}')
+
+r2 = r2_score(y_true=test_targets[:, 1], y_pred=test_predictions[:, 1])
+print(f'R² Score: {r2}')
+
 
 plot_loss(epochs, train_losses, val_losses)
 
-# why so bad wind prediction?
+
+
