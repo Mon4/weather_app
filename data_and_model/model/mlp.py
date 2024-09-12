@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from torch import nn, optim
 
 from weather_app.data_and_model.model.utils import count_r2, scatter_data_sampling, PlotMode, plot_loss, train_model, \
-    generator
+    generator, test_model
 
 np.set_printoptions(precision=8, suppress=True)
 pd.set_option('display.float_format', '{:.10f}'.format)
@@ -51,7 +51,9 @@ batch_size = 1024
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
                       batch_size=batch_size, device=device)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
-                    max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
+                     max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
+test_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.85*len(data))+1,
+                    max_index=len(data)-1, batch_size=batch_size, device=device)
 
 # define model
 n_columns = 10
@@ -84,3 +86,6 @@ count_r2(test_targets, test_predictions, columns)
 
 # loss plot
 plot_loss(epochs, train_losses, val_losses)
+
+# test loss
+test_model(model, test_gen, 50, criterion)

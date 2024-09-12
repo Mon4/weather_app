@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from torch import nn, optim
 
 from weather_app.data_and_model.model.utils import train_model, generator, scatter_data_sampling, count_r2, plot_loss, \
-    PlotMode
+    PlotMode, test_model
 
 np.set_printoptions(precision=8, suppress=True)
 pd.set_option('display.float_format', '{:.10f}'.format)
@@ -41,11 +41,13 @@ data = scaler.fit_transform(df_train_val)
 # generators to create batches
 lookback = 120
 delay = 0
-batch_size = 256
+batch_size = 1024
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
                       batch_size=batch_size, device=device)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
-                    max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
+                     max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
+test_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.85*len(data))+1,
+                    max_index=len(data)-1, batch_size=batch_size, device=device)
 
 
 n_columns = 10
@@ -79,6 +81,9 @@ count_r2(test_targets, test_predictions, columns)
 # loss plot
 plot_loss(epochs, train_losses, val_losses)
 
+# test loss
+test_model(model, test_gen, 50, criterion)
 
-# use test/val generator
+# more models - seqtoseq/ gru/ TCNs
+# predicting sequences
 # more refactoring, common stuff in LSTM and MLP

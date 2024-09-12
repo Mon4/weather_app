@@ -109,3 +109,14 @@ def train_model(epochs: int, model: nn.Module, train_gen: Generator, val_gen: Ge
         print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}, Validation Loss: {val_loss} ')
 
     return train_losses, val_losses, train_predictions, train_targets, test_predictions, test_targets
+
+
+def test_model(model: nn.Module, test_gen: Generator, steps: int, criterion: nn) -> None:
+    model.eval()
+    test_loss = 0.0
+    with torch.no_grad():
+        for step in range(steps):
+            test_inputs, test_labels = next(test_gen)
+            test_outputs = model(test_inputs)
+            test_loss += criterion(test_outputs.squeeze(), test_labels).item()
+    print(f'Test Loss: {test_loss/steps:.4f}')
