@@ -41,8 +41,8 @@ def plot_loss(epochs: int, train_loss: list, val_loss: list) -> None:
     plt.show()
 
 
-def generator(data: np.ndarray, lookback: int, delay: int, min_index: int = 0, max_index: int = None,
-              batch_size: int = 128, ) -> (list, list):
+def generator(data: np.ndarray, lookback: int, delay: int, device: torch.device,
+              min_index: int = 0, max_index: int = None, batch_size: int = 128, ) -> (list, list):
     if max_index is None:
         max_index = len(data) - delay - 1
     i = min_index + lookback
@@ -62,7 +62,7 @@ def generator(data: np.ndarray, lookback: int, delay: int, min_index: int = 0, m
             samples[j] = tensor(data[indices], dtype=float32)
             targets[j] = tensor(data[indices[-1] + 1 + delay], dtype=float32)
 
-        yield samples, targets
+        yield samples.to(device), targets.to(device)
 
 
 def train_model(epochs: int, model: nn.Module, train_gen: Generator, val_gen: Generator, criterion: nn, optimizer: torch.optim) -> (list, ...):
@@ -92,8 +92,8 @@ def train_model(epochs: int, model: nn.Module, train_gen: Generator, val_gen: Ge
         loss.backward()
         optimizer.step()
 
-        train_predictions.extend(train_outputs.detach().numpy())
-        train_targets.extend(y_batch.numpy())
+        train_predictions.extend(train_outputs.cpu().detach().numpy())
+        train_targets.extend(y_batch.cpu().numpy())
 
         # evaluation
         model.eval()
@@ -103,8 +103,8 @@ def train_model(epochs: int, model: nn.Module, train_gen: Generator, val_gen: Ge
             val_loss = criterion(test_outputs, y_val).item()
             val_losses.append(val_loss)
 
-            test_predictions.extend(test_outputs.detach().numpy())
-            test_targets.extend(y_val.numpy())
+            test_predictions.extend(test_outputs.cpu().detach().numpy())
+            test_targets.extend(y_val.cpu().numpy())
 
         print(f'Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}, Validation Loss: {val_loss} ')
 

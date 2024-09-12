@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import torch
 from sklearn.preprocessing import StandardScaler
 from torch import nn, optim
 
@@ -8,6 +9,9 @@ from weather_app.data_and_model.model.utils import count_r2, scatter_data_sampli
 
 np.set_printoptions(precision=8, suppress=True)
 pd.set_option('display.float_format', '{:.10f}'.format)
+
+print(f"Cuda available: {torch.cuda.is_available()}")
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 class MyModel(nn.Module):
@@ -34,7 +38,6 @@ class MyModel(nn.Module):
 df_train = pd.read_csv('../data/history_data_small.csv')
 df_train.set_index('time', inplace=True)
 
-
 # data preparation
 df_train_val = df_train.values
 columns = df_train.columns
@@ -46,9 +49,9 @@ lookback = 120
 delay = 0
 batch_size = 1024
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
-                      batch_size=batch_size)
+                      batch_size=batch_size, device=device)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
-                    max_index=round(0.85*len(data)), batch_size=batch_size)
+                    max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
 
 # define model
 n_columns = 10
@@ -57,17 +60,15 @@ hidden_size = 1024
 output_size = 10  # One row with 10 columns
 epochs = 100
 
-
 # define model
-model = MyModel(input_size, hidden_size, output_size)
+model = MyModel(input_size, hidden_size, output_size).to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
 # train model
-train_losses, val_losses, train_preds, train_targets, test_preds, test_targets = train_model(epochs, model, val_gen,
+train_losses, val_losses, train_preds, train_targets, test_preds, test_targets = train_model(epochs, model, train_gen,
                                                                                              val_gen, criterion,
                                                                                              optimizer)
-
 # rescale
 train_predictions = scaler.inverse_transform(train_preds)
 train_targets = scaler.inverse_transform(train_targets)

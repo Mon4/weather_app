@@ -43,19 +43,19 @@ lookback = 120
 delay = 0
 batch_size = 256
 train_gen = generator(data, lookback=lookback, delay=delay, min_index=0, max_index=round(0.7*len(data)),
-                      batch_size=batch_size)
+                      batch_size=batch_size, device=device)
 val_gen = generator(data, lookback=lookback, delay=delay, min_index=round(0.7*len(data))+1,
-                    max_index=round(0.85*len(data)), batch_size=batch_size)
+                    max_index=round(0.85*len(data)), batch_size=batch_size, device=device)
 
 
 n_columns = 10
 input_size = lookback * n_columns  # 120 * 10 = 1200
 hidden_size = 1024
 output_size = 10  # One row with 10 columns
-epochs = 10
+epochs = 100
 
 # define model
-model = MyLSTM(n_columns, hidden_size, output_size)
+model = MyLSTM(n_columns, hidden_size, output_size).to(device)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
