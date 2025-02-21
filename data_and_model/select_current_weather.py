@@ -13,8 +13,8 @@ def select_columns(data: dict) -> pd.DataFrame:
     row = []
 
     # select key columns
-    for d in range(0, 3):
-        for h in range(0, 24):
+    for d in range(len(data['forecast']['forecastday'])):
+        for h in range(24):
             for key in keys:
                 row.append(data['forecast']['forecastday'][d]['hour'][h].get(key))
             last_df.loc[len(last_df)] = row
@@ -53,7 +53,7 @@ def select_current_weather(hours: int) -> None:
         pprint(api_response)
 
         df = select_columns(api_response)
-        df = remove_rows(today, df)
+        df = remove_rows(today, df, hours)
 
         df['time'] = pd.to_datetime(df['time'])
 
